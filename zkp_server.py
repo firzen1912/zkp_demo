@@ -18,6 +18,18 @@ def save_user_db_to_file(filename="user_db.txt"):
         for username, (salt, v) in user_db.items():
             f.write(f"{username}:{salt.hex()}:{hex(v)}\n")
 
+def load_user_db_from_file(filename="user_db.txt"):
+    try:
+        with open(filename, "r") as f:
+            for line in f:
+                username, salt_hex, v_hex = line.strip().split(":")
+                salt = bytes.fromhex(salt_hex)
+                v = int(v_hex, 16)
+                user_db[username] = (salt, v)
+        print("[*] Loaded user database from file.")
+    except FileNotFoundError:
+        print("[*] No user database file found. Starting fresh.")
+
 def H(*args):
     h = hashlib.sha256()
     for arg in args:
@@ -28,6 +40,7 @@ def calculate_x(salt, I, P):
     return H(salt, H(f"{I}:{P}"))
 
 def run_server():
+    load_user_db_from_file()
     with socket.socket() as s:
         s.bind(('localhost', 8000))
         s.listen(1)
